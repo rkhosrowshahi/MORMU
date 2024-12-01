@@ -115,8 +115,8 @@ def main(args):
 
     plt.figure(figsize=(5,5))
     plt.scatter(retrained_model_f1, retrained_model_f2, s=50, marker='*', label="Retrained Model")
-    plt.scatter(pareto_F[:, 0], pareto_F[:, 1], s=50, marker='^', label="Unlearned Pareto Optimal")
-    plt.scatter(orig_model_f1, orig_model_f2, s=50, label="Pre-trained Original Model")
+    plt.scatter(pareto_F[:, 0], pareto_F[:, 1], s=50, label="Unlearned Pareto Optimal")
+    plt.scatter(orig_model_f1, orig_model_f2, s=50, marker='^', label="Pre-trained Original Model")
     plt.xlabel(f"$f_1$, Forget Entropy")
     plt.ylabel(f"$f_2$, Retain F1 score")
     plt.grid()
@@ -148,8 +148,8 @@ def main(args):
 
     plt.figure(figsize=(5,5))
     plt.scatter(retrained_model_mia*100, retrained_model_test_top1*100, s=50, marker='*', label="Retrained Model")
-    plt.scatter((pareto_mia)*100, pareto_test_top1*100, s=50, marker='^', label="Unlearned Pareto Optimal")
-    plt.scatter(orig_model_mia*100, orig_model_test_top1*100, s=50, label="Pre-trained Original Model")
+    plt.scatter((pareto_mia)*100, pareto_test_top1*100, s=50, label="Unlearned Pareto Optimal")
+    plt.scatter(orig_model_mia*100, orig_model_test_top1*100, s=50, marker='^', label="Pre-trained Original Model")
     plt.xlabel(f"MIA (%)")
     plt.ylabel(f"Test Top-1 (%)")
     plt.grid()

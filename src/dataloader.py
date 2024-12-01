@@ -57,7 +57,7 @@ def fashion_loader():
     forget_indices = range(1000)
     retain_indices = range(1000, len(train_dataset))
     forget_loader = BatchLoader(X=train_batch[0][forget_indices], y=train_batch[1][forget_indices], batch_size=1024)
-    retain_loader = BatchLoader(X=train_batch[0][retain_indices], y=train_batch[1][retain_indices], batch_size=128)
+    retain_loader = BatchLoader(X=train_batch[0][retain_indices], y=train_batch[1][retain_indices], batch_size=1024)
 
     test_batch = next(iter(torch.utils.data.DataLoader(test_dataset, batch_size=len(test_dataset), shuffle=False)))
     test_loader = BatchLoader(*test_batch, batch_size=128)
