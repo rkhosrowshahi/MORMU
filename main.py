@@ -10,7 +10,7 @@ from src.dataloader import fashion_loader
 from src.mia import evaluate_mia
 from src.models import MLP, LeNet5
 from src.learner import trainer, evaluator
-from src.unlearner import evaluate_3penalty_f1score, evaluate_custom, evaluate_entropy_f1score, mo_unlearner
+from src.unlearner import evaluate_3penalty_f1score, evaluate_entropy_f1score, mo_unlearner
 from src.utils import get_params, load_model, load_params, save_model, total_params
 
 import pandas as pd
@@ -187,7 +187,7 @@ if __name__ == "__main__":
     # Positional arguments (required)
     parser.add_argument("--net", type=str, default='mlp', help="Network type. Choose between mlp or lenet")
     parser.add_argument("--dataset", type=str, default='fashion', help="Choose dataset")
-    parser.add_argument("--obj", type=str, default='entropy_f1score', choices=['entropy_f1score', '___'], help="Choose unlearner objective type. ")
+    parser.add_argument("--obj", type=str, default='entropy_f1score', choices=['entropy_f1score', '3penalty_f1score'], help="Choose unlearner objective type. ")
 
     # Optional arguments
     parser.add_argument(
