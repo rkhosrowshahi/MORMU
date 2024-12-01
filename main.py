@@ -25,7 +25,8 @@ def main(args):
     network_type = args.net
     dataset_type = args.dataset
     output_dir = args.output_dir
-    os.makedirs(f"{output_dir}/{dataset_type}/{network_type}/{args.obj}/{args.steps}steps", exist_ok=True)
+    checkpoint_dir = f"{output_dir}/{dataset_type}/{network_type}/{args.obj}/{args.steps}steps"
+    os.makedirs(checkpoint_dir, exist_ok=True)
 
     train_loader, test_loader, forget_loader, retain_loader, shadow_train_loader, shadow_unseen_loader = None, None, None, None, None, None
     if dataset_type.lower() == 'fashion':
@@ -44,7 +45,7 @@ def main(args):
     dims = total_params(model=orig_model)
     print("Total number of parameters in model:", dims)
     
-    orig_model_checkpoint_path = f"{output_dir}/{dataset_type}/{network_type}/{args.obj}/{args.steps}steps/orig_model_checkpoint.pth"
+    orig_model_checkpoint_path = f"{checkpoint_dir}/orig_model_checkpoint.pth"
     if os.path.exists(orig_model_checkpoint_path):
         print("Previous original model checkpoint found and loaded!")
         orig_model = load_model(model=orig_model, path=orig_model_checkpoint_path)
@@ -57,7 +58,7 @@ def main(args):
     print("-"*50)
 
     retrain_model = network(**network_init_params).to(device)
-    retrain_model_checkpoint_path = f"{output_dir}/{dataset_type}/{network_type}/{args.obj}/{args.steps}steps/retrain_model_checkpoint.pth"
+    retrain_model_checkpoint_path = f"{checkpoint_dir}/retrain_model_checkpoint.pth"
 
     if os.path.exists(retrain_model_checkpoint_path):
         print("Previous retrained model checkpoint found and loaded!")
@@ -71,7 +72,7 @@ def main(args):
     print("-"*50)
     
     shadow_model = network(**network_init_params).to(device)
-    shadow_model_checkpoint_path = f"{output_dir}/{dataset_type}/{network_type}/{args.obj}/{args.steps}steps/shadow_model_checkpoint.pth"
+    shadow_model_checkpoint_path = f"{checkpoint_dir}/shadow_model_checkpoint.pth"
     if os.path.exists(shadow_model_checkpoint_path):
         print("Previous shadow model checkpoint found and loaded!")
         shadow_model = load_model(model=shadow_model, path=shadow_model_checkpoint_path)
@@ -99,8 +100,8 @@ def main(args):
 
     print("Unlearning forgetting data...")
     pareto_X, pareto_F, pareto_size = None, None, None
-    if os.path.exists(f"{output_dir}/{dataset_type}/{network_type}/{args.obj}/{args.steps}steps/unlearned_pareto_front_set_{args.steps}steps.npz"):
-        loadnpz = np.load(f"{output_dir}/{dataset_type}/{network_type}/{args.obj}/{args.steps}steps/unlearned_pareto_front_set_{args.steps}steps.npz")
+    if os.path.exists(f"{checkpoint_dir}/unlearned_pareto_front_set_{args.steps}steps.npz"):
+        loadnpz = np.load(f"{checkpoint_dir}/unlearned_pareto_front_set_{args.steps}steps.npz")
         pareto_X, pareto_F = loadnpz['X'], loadnpz['F']
         pareto_size = len(pareto_X)
         print("Previous unlearned model checkpoint found and loaded!")
@@ -122,7 +123,7 @@ def main(args):
 
         pareto_F = np.column_stack([f1, f2])
 
-        np.savez(f"{output_dir}/{dataset_type}/{network_type}/{args.obj}/{args.steps}steps/unlearned_pareto_front_set_{args.steps}steps.npz", X=pareto_X, F=pareto_F)
+        np.savez(f"{checkpoint_dir}/unlearned_pareto_front_set_{args.steps}steps.npz", X=pareto_X, F=pareto_F)
 
     orig_model = load_params(parameters=trained_params, model=orig_model, device=device)
     orig_model_f1, orig_model_f2 = unlearner_objs(rng=[0, 0], model=orig_model, forget_loader=forget_loader, retain_loader=retain_loader, device=device)
@@ -137,7 +138,7 @@ def main(args):
     plt.ylabel(f"$f_2$, {obj_names[1]}")
     plt.grid()
     plt.legend()
-    plt.savefig(f"{output_dir}/{dataset_type}/{network_type}/{args.obj}/{args.steps}steps/unlearned_{args.steps}steps_f1_f2_plot.pdf")
+    plt.savefig(f"{checkpoint_dir}/unlearned_{args.steps}steps_f1_f2_plot.pdf")
     # plt.show()
     plt.close()
 
@@ -164,7 +165,7 @@ def main(args):
     plt.ylabel(f"Test Top-1 (%)")
     plt.grid()
     plt.legend()
-    plt.savefig(f"{output_dir}/{dataset_type}/{network_type}/{args.obj}/{args.steps}steps/unlearned_{args.steps}steps_test_mia_plot.pdf")
+    plt.savefig(f"{checkpoint_dir}/unlearned_{args.steps}steps_test_mia_plot.pdf")
     # plt.show()
     plt.close()
 
@@ -178,7 +179,7 @@ def main(args):
 
     df = pd.DataFrame(results_dict)
     print(df)
-    df.to_csv(f"{output_dir}/{dataset_type}/{network_type}/{args.obj}/{args.steps}steps/result_table.csv", index=False)
+    df.to_csv(f"{checkpoint_dir}/result_table.csv", index=False)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="A simple command-line parser example.")
