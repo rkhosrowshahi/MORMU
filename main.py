@@ -109,6 +109,7 @@ def main(args):
 
     np.savez(f"{output_dir}/{dataset_type}/{network_type}/{args.steps}steps/unlearned_pareto_front_set_{args.steps}steps.npz", X=pareto_X, F=pareto_F)
 
+    orig_model = load_params(parameters=trained_params, model=orig_model, device=device)
     orig_model_f1, orig_model_f2 = unlearner_objs(rng=[0, 0], model=orig_model, forget_loader=forget_loader, retain_loader=retain_loader, device=device)
     retrained_model_f1, retrained_model_f2 = unlearner_objs(rng=[0, 0], model=retrain_model, forget_loader=forget_loader, retain_loader=retain_loader, device=device)
 
