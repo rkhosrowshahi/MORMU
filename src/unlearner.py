@@ -36,7 +36,21 @@ def evaluate_entropy_f1score(rng, model, forget_loader, retain_loader, device):
 
     return f1, f2
 
-def mo_unlearner(dims, n_obj, n_steps, unlearner_objs, model, trained_params, forget_loader, retain_loader):
+def evaluate_3penalty_f1score(rng, model, forget_loader, retain_loader, device):
+
+    f1, f2 = 0, 0
+
+    X_u, y_u = forget_loader.sample(rng[0])
+    X_u, y_u = X_u.to(device), y_u.to(device)
+    out_u = model(X_u)
+
+    X_r, y_r = retain_loader.sample(rng[0])
+    X_r, y_r = X_r.to(device), y_r.to(device)
+    out_r = model(X_r)
+
+    return f1, f2
+
+def mo_unlearner(dims, n_obj, n_steps, objectives, model, trained_params, forget_loader, retain_loader):
     problem = Problem(n_var=dims, n_obj=n_obj, n_constr=0, xl=np.ones(dims) * -1, xu=np.ones(dims), )
 
     algorithm = NSGA2(pop_size=100)
@@ -56,11 +70,6 @@ def mo_unlearner(dims, n_obj, n_steps, unlearner_objs, model, trained_params, fo
     # fix the random seed manually
     np.random.seed(1)
 
-    # from pymoo.indicators.hv import HV
-
-    # ref_point = np.array([1.1, 1.1])
-    # ind = HV(ref_point=ref_point, zero_to_one=True)
-
     # until the algorithm has no terminated
     for n_gen in range(n_steps):
         # rng, rng_input, rng_eval = jax.random.split(rng, 3)
@@ -78,7 +87,7 @@ def mo_unlearner(dims, n_obj, n_steps, unlearner_objs, model, trained_params, fo
         f1, f2 = np.zeros(len(pop_X)), np.zeros(len(pop_X))
         for i in range(len(pop_X)):
             model = load_params(parameters=pop_X[i], model=model, device=device)
-            X_f1, X_f2 = unlearner_objs(rng=rng_eval, model=model, forget_loader=forget_loader, retain_loader=retain_loader, device=device)
+            X_f1, X_f2 = objectives(rng=rng_eval, model=model, forget_loader=forget_loader, retain_loader=retain_loader, device=device)
             f1[i], f2[i] = X_f1, X_f2
         
         re_f1, re_f2 = fitness_reshaper(pop_X, f1, w_decay=0.1, norm=False, maximize=True), fitness_reshaper(pop_X, f2, w_decay=0.1, norm=False, maximize=True)
@@ -90,9 +99,6 @@ def mo_unlearner(dims, n_obj, n_steps, unlearner_objs, model, trained_params, fo
         # returned the evaluated individuals which have been evaluated or even modified
         algorithm.tell(infills=pop)
         res = algorithm.result()
-
-        # hv_val = 0
-        # hv_val = ind(res.F)
 
         # do same more things, printing, logging, storing or even modifying the algorithm object
         print(algorithm.n_gen, len(res.F), res.F.mean(axis=0), res.F.max(axis=0), res.F.min(axis=0))

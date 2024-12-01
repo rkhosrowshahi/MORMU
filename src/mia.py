@@ -11,7 +11,6 @@ from sklearn.metrics import confusion_matrix
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 def evaluate_mia(shadow_model, target_model, shadow_train_loader, shadow_unseen_loader, forget_loader):
-    # load_model(parameters=X, model=model, device=device)
 
     in_logits, out_logits, forget_logits = [], [], []
     with torch.no_grad():
@@ -43,16 +42,15 @@ def evaluate_mia(shadow_model, target_model, shadow_train_loader, shadow_unseen_
 
     y_train = np.hstack([np.zeros(len(in_logits)), np.ones(len(out_logits))])
 
-    # print(X_train.shape, y_train.shape)
+    attacker = MLPClassifier(hidden_layer_sizes=(64), max_iter=200, batch_size=32, random_state=0)
 
-    attacker = MLPClassifier(hidden_layer_sizes=(64), max_iter=1000, batch_size=32, random_state=1)
-    # attacker = SVC()
     attacker.fit(X_train, y_train)
 
     y_pred = attacker.predict(forget_logits)
-    fpr = 0
+    tpr = 0
     tn, fp, fn, tp = confusion_matrix(y_true=np.ones(len(forget_logits)), y_pred=y_pred).ravel()
-    fpr = tp / (tp+fn)
 
-    return fpr
+    tpr = tp / (tp+fn)
+
+    return tpr
     

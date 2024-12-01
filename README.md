@@ -23,11 +23,11 @@ There are two networks to use and suggested commands are as follows:
 1. MLP (64 hidden units), 50K params
 
     ```
-    python3 main.py --net mlp --dataset fashion --output_dir ./out/mlp-64 --steps 1000
+    python3 main.py --net mlp --dataset fashion --obj entropy_f1score --output_dir ./out/mlp-64 --steps 1000
     ```
 
 2. LeNet-5, 60K params
 
     ```
-    python3 main.py --net lenet --dataset fashion --output_dir ./out/lenet --steps 1000
+    python3 main.py --net lenet --dataset fashion --obj entropy_f1score --output_dir ./out/lenet --steps 1000
     ```
