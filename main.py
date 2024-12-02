@@ -10,7 +10,7 @@ from src.dataloader import fashion_loader
 from src.mia import evaluate_mia
 from src.models import MLP, LeNet5
 from src.learner import trainer, evaluator
-from src.unlearner import evaluate_3penalty_f1score, evaluate_custom, evaluate_entropy_f1score, mo_unlearner
+from src.unlearner import evaluate_3penalty_f1score, evaluate_entropy_f1score, mo_unlearner
 from src.utils import get_params, load_model, load_params, save_model, total_params
 
 import pandas as pd
@@ -27,6 +27,8 @@ def main(args):
     output_dir = args.output_dir
     checkpoint_dir = f"{output_dir}/{dataset_type}/{network_type}/{args.obj}/{args.steps}steps"
     os.makedirs(checkpoint_dir, exist_ok=True)
+    network_checkpoint_dir = f"./checkpoint/{dataset_type}/{network_type}"
+    os.makedirs(network_checkpoint_dir, exist_ok=True)
 
     train_loader, test_loader, forget_loader, retain_loader, shadow_train_loader, shadow_unseen_loader = None, None, None, None, None, None
     if dataset_type.lower() == 'fashion':
@@ -45,7 +47,7 @@ def main(args):
     dims = total_params(model=orig_model)
     print("Total number of parameters in model:", dims)
     
-    orig_model_checkpoint_path = f"{checkpoint_dir}/orig_model_checkpoint.pth"
+    orig_model_checkpoint_path = f"{network_checkpoint_dir}/orig_model_checkpoint.pth"
     if os.path.exists(orig_model_checkpoint_path):
         print("Previous original model checkpoint found and loaded!")
         orig_model = load_model(model=orig_model, path=orig_model_checkpoint_path)
@@ -58,7 +60,7 @@ def main(args):
     print("-"*50)
 
     retrain_model = network(**network_init_params).to(device)
-    retrain_model_checkpoint_path = f"{checkpoint_dir}/retrain_model_checkpoint.pth"
+    retrain_model_checkpoint_path = f"{network_checkpoint_dir}/retrain_model_checkpoint.pth"
 
     if os.path.exists(retrain_model_checkpoint_path):
         print("Previous retrained model checkpoint found and loaded!")
@@ -72,7 +74,7 @@ def main(args):
     print("-"*50)
     
     shadow_model = network(**network_init_params).to(device)
-    shadow_model_checkpoint_path = f"{checkpoint_dir}/shadow_model_checkpoint.pth"
+    shadow_model_checkpoint_path = f"{network_checkpoint_dir}/shadow_model_checkpoint.pth"
     if os.path.exists(shadow_model_checkpoint_path):
         print("Previous shadow model checkpoint found and loaded!")
         shadow_model = load_model(model=shadow_model, path=shadow_model_checkpoint_path)
@@ -142,7 +144,7 @@ def main(args):
     # plt.show()
     plt.close()
 
-    ref_point = np.array([1.1, 1.1])
+    ref_point = np.array([2.1, 1.1])
     ind = HV(ref_point=ref_point)
     pareto_hv_val = ind(1-pareto_F)
     retrained_hv_val = ind(1-np.array([retrained_model_f1, retrained_model_f2]))
@@ -154,8 +156,6 @@ def main(args):
         m = evaluate_mia(target_model=unlearned_model, shadow_model=shadow_model, shadow_train_loader=shadow_train_loader, shadow_unseen_loader=shadow_unseen_loader, forget_loader=forget_loader)
         tf1 = evaluator(unlearned_model, test_loader)
         pareto_mia[i], pareto_test_top1[i] = m, tf1
-        
-    pareto_F = np.column_stack([pareto_mia, pareto_test_top1])
 
     plt.figure(figsize=(5,5))
     plt.scatter(retrained_model_mia*100, retrained_model_test_top1*100, s=50, marker='*', label="Retrained Model")
@@ -173,7 +173,7 @@ def main(args):
     results_dict['Models'] = np.concatenate([['Original Model'], ['Retrained Model'], ['Unlearned Model']*pareto_size])
     results_dict['MIA'] = np.concatenate([[orig_model_mia], [retrained_model_mia], pareto_mia])
     results_dict['Test Top-1'] = np.concatenate([[orig_model_test_top1], [retrained_model_test_top1], pareto_test_top1])
-    results_dict['HV'] = np.concatenate([[orig_hv_val], [orig_hv_val], [pareto_hv_val]*pareto_size])
+    results_dict['HV'] = np.concatenate([[orig_hv_val], [retrained_hv_val], [pareto_hv_val]*pareto_size])
     results_dict['f_1'] = np.concatenate([[orig_model_f1], [retrained_model_f1], pareto_F[:, 0]])
     results_dict['f_2'] = np.concatenate([[orig_model_f2], [retrained_model_f2], pareto_F[:, 1]])
 
@@ -187,7 +187,7 @@ if __name__ == "__main__":
     # Positional arguments (required)
     parser.add_argument("--net", type=str, default='mlp', help="Network type. Choose between mlp or lenet")
     parser.add_argument("--dataset", type=str, default='fashion', help="Choose dataset")
-    parser.add_argument("--obj", type=str, default='entropy_f1score', choices=['entropy_f1score', '___'], help="Choose unlearner objective type. ")
+    parser.add_argument("--obj", type=str, default='entropy_f1score', choices=['entropy_f1score', '3penalty_f1score'], help="Choose unlearner objective type. ")
 
     # Optional arguments
     parser.add_argument(

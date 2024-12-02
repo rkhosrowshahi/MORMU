@@ -38,17 +38,38 @@ def evaluate_entropy_f1score(rng, model, forget_loader, retain_loader, device):
 
 def evaluate_3penalty_f1score(rng, model, forget_loader, retain_loader, device):
 
-    f1, f2 = 0, 0
-
+    # forget data
     X_u, y_u = forget_loader.sample(rng[0])
     X_u, y_u = X_u.to(device), y_u.to(device)
     out_u = model(X_u)
 
+    # retain data
     X_r, y_r = retain_loader.sample(rng[0])
     X_r, y_r = X_r.to(device), y_r.to(device)
     out_r = model(X_r)
 
-    return f1, f2
+    probs = F.softmax(out_u, dim=1)
+    p_t_u = probs[torch.arange(len(y_u)), y_u]  # actual class
+
+    # 1: Minimize the probability of the actual class
+    term_1 = p_t_u.mean()
+
+    # 2: Maximize the probability of other classes without exceeding the true class
+    other_probs_u = probs.clone()
+    other_probs_u[torch.arange(len(y_u)), y_u] = 0  # Exclude actual class probabilities
+    term_2 = other_probs_u.sum(dim=1).div(other_probs_u.size(1) - 1).mean()
+
+    # 3: minimize, penalty for ensuring other classes don't exceed the actual class
+    penalty = torch.clamp(other_probs_u.max(dim=1).values - p_t_u, min=0).pow(2).mean()
+
+    f1 = term_1 - term_2 + penalty
+
+    # f2 = F.cross_entropy(out_r, y_r).item()
+    _, pred_r = torch.max(out_r, dim=1)
+    f2 = f1_score(y_true=y_r.detach().cpu().numpy(), y_pred=pred_r.detach().cpu().numpy(), average="weighted",
+                  zero_division=0.0)
+
+    return -1 * f1.item(), f2 # maximize both
 
 def mo_unlearner(dims, n_obj, n_steps, objectives, model, trained_params, forget_loader, retain_loader):
     problem = Problem(n_var=dims, n_obj=n_obj, n_constr=0, xl=np.ones(dims) * -1, xu=np.ones(dims), )

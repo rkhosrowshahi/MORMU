@@ -42,7 +42,7 @@ def evaluate_mia(shadow_model, target_model, shadow_train_loader, shadow_unseen_
 
     y_train = np.hstack([np.zeros(len(in_logits)), np.ones(len(out_logits))])
 
-    attacker = MLPClassifier(hidden_layer_sizes=(64), max_iter=200, batch_size=32, random_state=0)
+    attacker = MLPClassifier(hidden_layer_sizes=(64), max_iter=1000, batch_size=32, random_state=0)
 
     attacker.fit(X_train, y_train)
 
